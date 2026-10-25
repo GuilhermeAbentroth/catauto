@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CatAuto · Gestão de Automóveis</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #131a2e;
+            --panel-2: #1a2340;
+            --line: #263050;
+            --text: #e8ecf8;
+            --muted: #8d98b8;
+            --accent: #5b8cff;
+            --accent-2: #8b5cf6;
+            --ok: #34d399;
+            --danger: #f87171;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+            background:
+                radial-gradient(900px 500px at 10% -10%, rgba(91,140,255,.18), transparent 60%),
+                radial-gradient(700px 400px at 100% 0%, rgba(139,92,246,.15), transparent 60%),
+                var(--bg);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+        header { display: flex; align-items: center; justify-content: space-between; padding: 28px 0 8px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .logo {
+            width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); font-size: 22px;
+            box-shadow: 0 8px 24px rgba(91,140,255,.35);
+        }
+        .brand h1 { font-size: 22px; letter-spacing: .3px; }
+        .brand small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+        .links a { color: var(--muted); font-size: 13px; text-decoration: none; margin-left: 16px; }
+        .links a:hover { color: var(--text); }
+
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
+        .stat {
+            background: linear-gradient(180deg, var(--panel), var(--panel-2));
+            border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+        }
+        .stat span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .8px; }
+        .stat strong { display: block; font-size: 32px; margin-top: 6px; }
+
+        nav.tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--line);
+            padding: 6px; border-radius: 14px; width: fit-content; max-width: 100%; overflow-x: auto; }
+        nav.tabs button {
+            background: none; border: 0; color: var(--muted); padding: 10px 18px; border-radius: 10px;
+            font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: .15s;
+        }
+        nav.tabs button:hover { color: var(--text); }
+        nav.tabs button.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+
+        section.tab { display: none; margin-top: 20px; }
+        section.tab.active { display: block; }
+
+        .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+        .card h2 { font-size: 15px; margin-bottom: 16px; }
+
+        form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+        label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); flex: 1 1 160px; }
+        input, select {
+            background: var(--bg); border: 1px solid var(--line); color: var(--text);
+            padding: 11px 12px; border-radius: 10px; font-size: 14px; outline: none; width: 100%;
+        }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,140,255,.2); }
+        .btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: 0;
+            padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn.ghost { background: var(--panel-2); border: 1px solid var(--line); }
+        .btn.del {
+            background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,.35);
+            padding: 6px 12px; font-size: 12px;
+        }
+        .btn.del:hover { background: rgba(248,113,113,.12); transform: none; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+            padding: 10px 12px; border-bottom: 1px solid var(--line); }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
+        tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: rgba(255,255,255,.025); }
+        td.right, th.right { text-align: right; }
+        .empty { color: var(--muted); text-align: center; padding: 28px 0; font-size: 14px; }
+
+        .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+            background: rgba(91,140,255,.15); color: #9db8ff; }
+        .plate { font-family: Consolas, monospace; background: #fff; color: #111; padding: 3px 9px; border-radius: 6px;
+            font-weight: 700; letter-spacing: 1px; border-bottom: 3px solid #1d4ed8; font-size: 13px; }
+        .money { color: var(--ok); font-weight: 600; }
+        .items { color: var(--muted); font-size: 13px; }
+        .draft { margin-top: 12px; font-size: 13px; color: var(--muted); width: 100%; }
+        .draft b { color: var(--text); }
+        .checks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; width: 100%; font-size: 13px; color: var(--muted); }
+        .checks label { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 6px; font-size: 13px; color: var(--text); cursor: pointer; }
+        .checks input { width: auto; accent-color: var(--accent); }
+
+        #toast { position: fixed; bottom: 24px; right: 24px; background: var(--panel-2); border: 1px solid var(--line);
+            padding: 12px 18px; border-radius: 12px; font-size: 14px; opacity: 0; transform: translateY(10px);
+            transition: .25s; pointer-events: none; }
+        #toast.show { opacity: 1; transform: none; }
+        #toast.err { border-color: var(--danger); color: var(--danger); }
+
+        @media (max-width: 720px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .links { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <header>
+        <div class="brand">
+            <div class="logo">🚗</div>
+            <div>
+                <h1>CatAuto</h1>
+                <small>Catálogo de automóveis e pedidos</small>
+            </div>
+        </div>
+        <div class="links">
+            <a href="/api/automoveis" target="_blank">API</a>
+            <a href="/h2-console" target="_blank">Banco de dados</a>
+            <a href="/actuator/health" target="_blank">Status</a>
+        </div>
+    </header>
+
+    <div class="stats">
+        <div class="stat"><span>Em estoque</span><strong th:text="${#lists.size(Automovel)}">0</strong></div>
+        <div class="stat"><span>Clientes</span><strong id="stat-clientes">–</strong></div>
+                <div class="stat"><span>Pedidos</span><strong id="stat-pedidos">–</strong></div>
+    </div>
+
+    <nav class="tabs">
+        <button class="active" data-tab="automoveis">Automóveis</button>
+        <button data-tab="clientes">Clientes</button>
+        <button data-tab="pedidos">Pedidos</button>
+    </nav>
+
+    <!-- AUTOMÓVEIS (renderizado pelo Thymeleaf) -->
+    <section class="tab active" id="tab-automoveis">
+        <div class="card">
+            <h2>Novo automóvel</h2>
+            <form id="f-automovel">
+                <label>Marca
+                    <input id="a-marca" list="l-marcas" placeholder="GM" autocomplete="off" required>
+                    <datalist id="l-marcas"></datalist>
+                </label>
+                <label>Modelo
+                    <input id="a-modelo" list="l-modelos" placeholder="ONIX" autocomplete="off" required>
+                    <datalist id="l-modelos"></datalist>
+                </label>
+                <label>Ano
+                    <input id="a-ano" type="number" min="1900" max="2100" placeholder="2024" required>
+                </label>
+                <label>Placa
+                    <input id="a-placa" placeholder="ABC-1234" required>
+                </label>
+                <label>Preço (R$)
+                    <input id="a-preco" type="number" step="0.01" min="0" placeholder="50000" required>
+                </label>
+                <button class="btn">Adicionar</button>
+                <div class="checks" id="a-opcionais"></div>
+            </form>
+        </div>
+        <div class="card">
+            <h2>Veículos em estoque</h2>
+            <table>
+                <thead>
+                <tr><th>Marca</th><th>Modelo</th><th>Ano</th><th>Placa</th><th>Preço</th><th>Opcionais</th><th class="right"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${Automovel}">
+                    <td><span class="pill" th:text="${c.modelo?.marca?.nome}"></span></td>
+                    <td th:text="${c.modelo?.nome}"></td>
+                    <td th:text="${c.ano}"></td>
+                    <td><span class="plate" th:text="${c.placa}"></span></td>
+                    <td class="money" th:text="${c.preco != null} ? ${#numbers.formatDecimal(c.preco, 1, 'POINT', 2, 'COMMA')} : '–'"></td>
+                    <td class="items">
+                        <span th:each="o, s : ${c.opcionais}" th:text="${o.nome} + (${s.last} ? '' : ', ')"></span>
+                        <span th:if="${c.opcionais.isEmpty()}">–</span>
+                    </td>
+                    <td class="right"><button class="btn del" th:attr="data-del=${c.id}" data-res="automoveis">Excluir</button></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="tab" id="tab-clientes">
+        <div class="card">
+            <h2>Novo cliente</h2>
+            <form id="f-cliente">
+                <label>Nome <input id="c-nome" required></label>
+                <label>E-mail <input id="c-email" type="email" required></label>
+                <label>Telefone <input id="c-tel" placeholder="(47) 99999-0000"></label>
+                <button class="btn">Adicionar</button>
+            </form>
+        </div>
+        <div class="card">
+            <h2>Clientes</h2>
+            <table>
+                <thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th class="right"></th></tr></thead>
+                <tbody id="t-clientes"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- PEDIDOS -->
+    <section class="tab" id="tab-pedidos">
+        <div class="card">
+            <h2>Novo pedido</h2>
+            <form id="f-pedido">
+                <label>Cliente <select id="o-cliente" required></select></label>
+                <label>Automóvel <select id="o-auto"></select></label>
+                <label>Pagamento
+                    <select id="o-forma">
+                        <option value="A_VISTA">À vista</option>
+                        <option value="FINANCIAMENTO">Financiamento</option>
+                        <option value="CONSORCIO">Consórcio</option>
+                    </select>
+                </label>
+                <label>Parcelas <input id="o-parcelas" type="number" min="1" max="120" value="1" required></label>
+                <button type="button" class="btn ghost" id="o-add">+ Adicionar</button>
+                <button class="btn">Finalizar pedido</button>
+                <div class="draft" id="o-draft">Nenhum automóvel adicionado.</div>
+            </form>
+        </div>
+        <div class="card">
+            <h2>Pedidos realizados</h2>
+            <table>
+                <thead><tr><th>#</th><th>Data</th><th>Cliente</th><th>Automóveis</th><th>Total</th><th>Pagamento</th><th class="right"></th></tr></thead>
+                <tbody id="t-pedidos"></tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const brl = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FORMAS = { A_VISTA: 'À vista', FINANCIAMENTO: 'Financiamento', CONSORCIO: 'Consórcio' };
+const pagamento = (pg) => !pg ? '–'
+    : pg.parcelas > 1 ? `${FORMAS[pg.forma]} · ${pg.parcelas}x de ${brl(pg.valorParcela)}` : FORMAS[pg.forma];
+
+function toast(msg, err) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.className = 'show' + (err ? ' err' : '');
+    setTimeout(() => t.className = '', 2800);
+}
+
+async function api(path, method = 'GET', body) {
+    const r = await fetch('/api/' + path, {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        body: body ? JSON.stringify(body) : undefined
+    });
+    if (!r.ok) {
+        let msg = 'Erro ' + r.status;
+        try { const j = await r.json(); msg = j.erro || j.message || msg; } catch (e) {}
+        throw new Error(msg);
+    }
+    return r.status === 204 ? null : r.json();
+}
+
+/* ---- abas ---- */
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
+    try { localStorage.setItem('tab', b.dataset.tab); } catch (e) {}
+}));
+try {
+    const saved = localStorage.getItem('tab');
+    if (saved) document.querySelector('nav.tabs button[data-tab="' + saved + '"]')?.click();
+} catch (e) {}
+
+/* recarrega a pagina e mostra o aviso depois (o toast sumiria no reload) */
+function recarregar(msg) {
+    try { sessionStorage.setItem('aviso', msg); } catch (e) {}
+    location.reload();
+}
+try {
+    const aviso = sessionStorage.getItem('aviso');
+    if (aviso) { sessionStorage.removeItem('aviso'); toast(aviso); }
+} catch (e) {}
+
+/* ---- excluir (botões de qualquer tabela) ---- */
+document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-del]');
+    if (!b || !confirm('Excluir este registro?')) return;
+    try {
+        await api(b.dataset.res + '/' + b.dataset.del, 'DELETE');
+        // a frota vem do servidor: excluir automovel ou cancelar pedido (que devolve ao estoque) recarrega a pagina
+        if (b.dataset.res === 'automoveis') return recarregar('Automóvel excluído');
+        if (b.dataset.res === 'pedidos') return recarregar('Pedido cancelado; automóveis de volta ao estoque');
+        toast('Registro excluído');
+        carregar();
+    } catch (err) { toast(err.message, true); }
+});
+
+/* ---- listagens ---- */
+let clientes = [], automoveis = [], modelos = [], opcionais = [];
+
+async function carregar() {
+    [clientes, automoveis, modelos, opcionais] = await Promise.all(
+        [api('clientes'), api('automoveis'), api('modelos'), api('opcionais')]);
+    const pedidos = await api('pedidos');
+
+    $('#stat-clientes').textContent = clientes.length;
+    $('#stat-pedidos').textContent = pedidos.length;
+
+    $('#l-marcas').innerHTML = [...new Set(modelos.map(m => m.marca))].map(n => `<option value="${esc(n)}">`).join('');
+    sugerirModelos();
+    $('#o-cliente').innerHTML = clientes.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+    $('#o-auto').innerHTML = automoveis.map(a => `<option value="${a.id}">${esc(a.marca)} ${esc(a.modelo)} ${a.ano} — ${esc(a.placa)} — ${brl(a.preco ?? 0)}</option>`).join('');
+    $('#a-opcionais').innerHTML = '<span>Opcionais:</span>' + opcionais.map(o =>
+        `<label><input type="checkbox" value="${o.id}"> ${esc(o.nome)}</label>`).join('');
+
+    const vazio = (n, txt) => `<tr><td colspan="${n}" class="empty">${txt}</td></tr>`;
+    const del = (res, id) => `<td class="right"><button class="btn del" data-res="${res}" data-del="${id}">Excluir</button></td>`;
+
+    $('#t-clientes').innerHTML = clientes.length ? clientes.map(c =>
+        `<tr><td>${esc(c.nome)}</td><td>${esc(c.email)}</td><td>${esc(c.telefone)}</td>${del('clientes', c.id)}</tr>`).join('')
+        : vazio(4, 'Nenhum cliente cadastrado.');
+
+    $('#t-pedidos').innerHTML = pedidos.length ? pedidos.map(p =>
+        `<tr><td>${p.id}</td><td>${esc(p.dataPedido)}</td><td>${esc(p.cliente)}</td>
+         <td class="items">${p.itens.map(i => esc(i.automovel) + ' (' + esc(i.placa) + ')').join(', ')}</td>
+         <td class="money">${brl(p.total)}</td><td class="items">${esc(pagamento(p.pagamento))}</td>${del('pedidos', p.id)}</tr>`).join('')
+        : vazio(7, 'Nenhum pedido realizado.');
+}
+
+/* ---- formulários ---- */
+async function enviar(ev, fn, msg) {
+    ev.preventDefault();
+    try { await fn(); toast(msg); ev.target.reset?.(); carregar(); }
+    catch (err) { toast(err.message, true); }
+}
+
+/* marca e modelo sao digitados; os que ainda nao existem sao cadastrados pela API */
+function sugerirModelos() {
+    const marca = $('#a-marca').value.trim().toUpperCase();
+    $('#l-modelos').innerHTML = modelos.filter(m => !marca || m.marca === marca)
+        .map(m => `<option value="${esc(m.nome)}">`).join('');
+}
+$('#a-marca').addEventListener('input', sugerirModelos);
+
+$('#f-automovel').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    try {
+        await api('automoveis', 'POST', {
+            marca: $('#a-marca').value, modelo: $('#a-modelo').value,
+            ano: Number($('#a-ano').value), placa: $('#a-placa').value.toUpperCase(),
+            preco: Number($('#a-preco').value),
+            opcionaisIds: [...document.querySelectorAll('#a-opcionais input:checked')].map(i => Number(i.value))
+        });
+        recarregar('Automóvel cadastrado');
+    } catch (err) { toast(err.message, true); }
+});
+
+$('#f-cliente').addEventListener('submit', (ev) => enviar(ev, () =>
+    api('clientes', 'POST', { nome: $('#c-nome').value, email: $('#c-email').value, telefone: $('#c-tel').value }),
+    'Cliente cadastrado'));
+
+/* pedido: escolhe os automoveis antes de enviar */
+let rascunho = [];
+function mostrarRascunho() {
+    $('#o-draft').innerHTML = rascunho.length
+        ? '<b>Automóveis:</b> ' + rascunho.map(i => esc(i.nome)).join(', ')
+        : 'Nenhum automóvel adicionado.';
+}
+$('#o-add').addEventListener('click', () => {
+    const sel = $('#o-auto');
+    if (!sel.value) return toast('Nenhum automóvel disponível', true);
+    const id = Number(sel.value);
+    if (rascunho.some(i => i.id === id)) return toast('Esse automóvel já está no pedido', true);
+    rascunho.push({ id, nome: sel.options[sel.selectedIndex].text.split(' — ').slice(0, 2).join(' · ') });
+    mostrarRascunho();
+});
+/* a vista e sempre 1 parcela */
+$('#o-forma').addEventListener('change', () => {
+    if ($('#o-forma').value === 'A_VISTA') $('#o-parcelas').value = 1;
+});
+/* depois da venda os automoveis saem do estoque: recarrega para a frota refletir isso */
+$('#f-pedido').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    try {
+        if (!rascunho.length) throw new Error('Adicione ao menos um automóvel');
+        await api('pedidos', 'POST', {
+            clienteId: Number($('#o-cliente').value), automoveisIds: rascunho.map(i => i.id),
+            formaPagamento: $('#o-forma').value, parcelas: Number($('#o-parcelas').value)
+        });
+        recarregar('Pedido registrado; automóveis vendidos saíram do estoque');
+    } catch (err) { toast(err.message, true); }
+});
+
+carregar().catch(() => toast('Falha ao carregar dados da API', true));
+</script>
+</body>
+</html>
